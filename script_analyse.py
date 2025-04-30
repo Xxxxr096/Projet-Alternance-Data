@@ -1,9 +1,4 @@
-# -----------------------------------------------
-# Script d'analyse des variations de prix produits
-# Auteur : Généré depuis notebook Jupyter
-# Objectif : Point bonus - script réutilisable
-# -----------------------------------------------
-
+# Importation des bibliothèques nécessaires
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -14,6 +9,7 @@ import re
 import os
 
 
+# Fonction  conversion du poids
 def convert_weight(cond):
     cond = str(cond).lower()
     match = re.search(r"\d+(?:[\.,]\d+)?", cond)
@@ -26,6 +22,7 @@ def convert_weight(cond):
     return None
 
 
+# Chargement et nettoyage des données
 def load_and_clean_data(file_path):
     df = pd.read_csv(file_path)
     df = df.rename(
@@ -35,11 +32,13 @@ def load_and_clean_data(file_path):
             "unit_price_without_tax": "price",
         }
     )
+    # Supprimer les lignes sans produit, conditionnement ou prix
     df = df.dropna(subset=["interpretation_product", "conditioning", "price"])
     df = df[(df["price"] > 0) & (df["price"] <= 150)]
     return df
 
 
+# Préparation des données pour clustering
 def prepare_clustering_data(df):
     cluster_df = (
         df.groupby(["interpretation_product", "conditioning"])
@@ -53,7 +52,12 @@ def prepare_clustering_data(df):
     return cluster_df
 
 
+# Clustering avec KMeans
 def run_kmeans_clustering(cluster_df, n_clusters=3):
+    """
+    Applique l’algorithme KMeans sur les données standardisées (prix et poids).
+    Retourne les clusters et les centroïdes.
+    """
     X = cluster_df[["price", "weight_in_g"]]
     scaler = StandardScaler()
     normalized_data = scaler.fit_transform(X)
@@ -63,7 +67,9 @@ def run_kmeans_clustering(cluster_df, n_clusters=3):
     labels = kmeans.labels_
     centroids = kmeans.cluster_centers_
 
+    # Ajouter les étiquettes aux données
     cluster_df["cluster"] = labels
+    # Revenir aux valeurs originales (non standardisées)
     original_values = scaler.inverse_transform(normalized_data)
     cluster_df["price_original"] = original_values[:, 0]
     cluster_df["weight_original"] = original_values[:, 1]
@@ -71,7 +77,12 @@ def run_kmeans_clustering(cluster_df, n_clusters=3):
     return cluster_df, centroids
 
 
+# Visualisation des clusters
 def plot_clusters(data, centroids):
+    """
+    Affiche les points clusterisés et les centroïdes sur un scatterplot.
+    Sauvegarde le graphique dans 'clusters.png'.
+    """
     plt.figure(figsize=(8, 6))
     scatter = plt.scatter(
         data["weight_in_g"], data["price"], c=data["cluster"], cmap="tab10", s=50
