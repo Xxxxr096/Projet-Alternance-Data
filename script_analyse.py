@@ -100,6 +100,7 @@ def plot_clusters(data, centroids):
 
 
 # ----------- EXECUTION PRINCIPALE -----------
+# Fonction principale
 def main():
     file_path = "extrait_produits.csv"
     if not os.path.exists(file_path):
